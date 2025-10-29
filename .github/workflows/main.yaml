@@ -65,10 +65,10 @@ jobs:
             platform: linux
             arch: arm64
             npm_config_arch: arm64
-          - os: ubuntu-latest
-            platform: linux
-            arch: armhf
-            npm_config_arch: arm
+          # - os: ubuntu-latest
+          #   platform: linux
+          #   arch: armhf
+          #   npm_config_arch: arm
           # - os: ubuntu-latest
           #   platform: alpine
           #   arch: x64
