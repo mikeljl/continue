@@ -71,6 +71,9 @@ ${BRIEF_LAZY_INSTRUCTIONS}
 
 However, only output codeblocks for suggestion and demonstration purposes, for example, when enumerating multiple hypothetical options. For implementing changes, use the edit tools.
 
+If the user asks about implementing Lean code, always use Lean 4 in your implementation. If you make changes to Lean files, always check if your changes are correct with the lean diagnostic tool or the lean goal tool. Revise your changes if there are errors.
+Note, the lean goal tool requires you to specify the line number that you want to get the proof goal of. If you are unsure of the line number, you can use the lean_file_contents tool to get the file content with the line number annotations.
+
 </important_rules>`;
 
 // The note about read-only tools is for MCP servers

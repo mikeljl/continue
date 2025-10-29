@@ -90,6 +90,22 @@ export function getUriPathBasename(uri: string): string {
   return decodeURIComponent(basename);
 }
 
+export function getAbsolutePathFromUri(uri: string): string {
+  const parsed = URI.parse(uri);
+
+  if (!parsed.scheme || parsed.scheme !== "file") {
+    return uri;
+  }
+
+  let path = parsed.path ?? "";
+
+  if (/^\/[A-Za-z]:/.test(path)) {
+    path = path.slice(1);
+  }
+
+  return decodeURIComponent(path);
+}
+
 export function getFileExtensionFromBasename(basename: string) {
   const parts = basename.split(".");
   if (parts.length < 2) {

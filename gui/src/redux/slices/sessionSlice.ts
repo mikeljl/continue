@@ -605,38 +605,79 @@ export const sessionSlice = createSlice({
 
           // Add to the existing message
           if (messageContent) {
-            if (messageContent.includes("<think>") && message.role !== "tool") {
+            const THINK_START = "<think>";
+            const THINK_END = "</think>";
+
+            const appendAssistantContent = (text: string) => {
+              if (!text) {
+                return;
+              }
+
+              // Prevent adding chunks that are purely whitespace before any content exists
+              if (
+                lastMessage.content.length === 0 &&
+                text.trim().length === 0
+              ) {
+                return;
+              }
+
+              const normalizedText =
+                lastMessage.role === "assistant" &&
+                lastMessage.content.length === 0
+                  ? text.trimStart()
+                  : text;
+
+              lastMessage.content += normalizedText;
+            };
+
+            let remaining = messageContent;
+            while (remaining.length > 0) {
+              if (lastItem.reasoning?.active) {
+                let combined = lastItem.reasoning.text + remaining;
+
+                if (lastItem.reasoning.text.length === 0) {
+                  combined = combined.trimStart();
+                }
+
+                const endIdx = combined.indexOf(THINK_END);
+
+                if (endIdx !== -1) {
+                  const reasoningPortion = combined.slice(0, endIdx).trimEnd();
+                  const afterClose = combined.slice(endIdx + THINK_END.length);
+
+                  lastItem.reasoning.text = reasoningPortion;
+                  lastItem.reasoning.active = false;
+                  lastItem.reasoning.endAt = Date.now();
+
+                  remaining = afterClose;
+                  continue;
+                } else {
+                  lastItem.reasoning.text = combined;
+                  break;
+                }
+              }
+
+              const startIdx = remaining.indexOf(THINK_START);
+
+              if (startIdx === -1) {
+                appendAssistantContent(remaining);
+                break;
+              }
+
+              const beforeThink = remaining.slice(0, startIdx);
+              if (beforeThink.length > 0) {
+                appendAssistantContent(beforeThink);
+              }
+
               lastItem.reasoning = {
                 startAt: Date.now(),
                 active: true,
-                text: messageContent.replace("<think>", "").trim(),
+                text: "",
               };
-            } else if (
-              lastItem.reasoning?.active &&
-              messageContent.includes("</think>")
-            ) {
-              const [reasoningEnd, answerStart] =
-                messageContent.split("</think>");
-              lastItem.reasoning.text += reasoningEnd.trimEnd();
-              lastItem.reasoning.active = false;
-              lastItem.reasoning.endAt = Date.now();
-              lastMessage.content += answerStart.trimStart();
-            } else if (lastItem.reasoning?.active) {
-              if (
-                lastItem.reasoning.text.length > 0 ||
-                messageContent.trim().length > 0
-              ) {
-                lastItem.reasoning.text += messageContent;
-              }
-            } else {
-              // Note this only works because new message above
-              // was already rendered from parts to string
-              if (
-                lastMessage.content.length > 0 ||
-                messageContent.trim().length > 0
-              ) {
-                lastMessage.content += messageContent;
-              }
+
+              remaining = remaining
+                .slice(startIdx + THINK_START.length)
+                .trimStart();
             }
           } else if (message.role === "thinking" && message.signature) {
             if (lastMessage.role === "thinking") {

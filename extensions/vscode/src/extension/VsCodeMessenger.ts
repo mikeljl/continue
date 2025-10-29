@@ -206,8 +206,10 @@ export class VsCodeMessenger {
       });
     });
     this.onWebview("edit/sendPrompt", async (msg) => {
-      const prompt = msg.data.prompt;
+      const prompt = msg.data.prompt; // the prompt user enters
       const { start, end } = msg.data.range.range;
+      console.log("data range:", msg.data.range.range);
+      console.log("prompt:", prompt);
       const verticalDiffManager = await verticalDiffManagerPromise;
 
       const configHandler = await configHandlerPromise;

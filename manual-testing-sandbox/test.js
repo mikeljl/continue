@@ -1,13 +1,13 @@
 class Calculator {
-  constructor() {
-    this.result = 0;
-  }
+  constructor() {}
 
   add(number) {
     this.result += number;
     return this;
   }
+
   subtract(number) {
+    this.result -= number;
     return this;
   }
 
@@ -29,7 +29,7 @@ class Calculator {
   }
 
   reset() {
-    this.result = 0;
+    this.result = 0; // Reset to zero when calling reset method
     return this;
   }
 }

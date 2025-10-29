@@ -94,7 +94,38 @@ export function getRangeInFileWithContents(
 export async function addHighlightedCodeToContext(
   webviewProtocol: VsCodeWebviewProtocol | undefined,
 ) {
-  const rangeInFileWithContents = getRangeInFileWithContents(true);
+  let rangeInFileWithContents = getRangeInFileWithContents(true);
+  console.log("rangeInFileWithContents", rangeInFileWithContents);
+  // if (rangeInFileWithContents) {
+  //     const editor = vscode.window.activeTextEditor;
+  //     const document = editor?.document;
+  //     if (!editor || !document) {
+  //       return;
+  //     }
+  //     const leanExt = vscode.extensions.getExtension("leanprover.lean4");
+  //     if (!leanExt) {
+  //       vscode.window.showErrorMessage("Lean 4 extension not installed.");
+  //       return;
+  //     }
+  //     if (!leanExt.isActive) await leanExt.activate();
+  //     console.log("Lean extension:", leanExt);
+  //     const features = await leanExt.exports.lean4EnabledFeatures;
+  //     const clientsMap: Map<string, any> = features.clientProvider.clients;
+  //     let clientWrapper = [...clientsMap.values()][0]; // default to first client
+
+  //     const languageClient = clientWrapper.client;
+  //     const params = {
+  //       textDocument: { uri: document.uri.toString() },
+  //       position: { line: rangeInFileWithContents.range.end.line, character: rangeInFileWithContents.range.end.character },
+  //     };
+  //     const response = await languageClient._connection.sendRequest("$/lean/plainGoal", params);
+  //     const goals = response.goals;
+  //     let extra_context = "";
+  //     for (const [index, goal] of goals.entries()) {
+  //       extra_context += `Proof goal ${index + 1}:\n${goal}\n`;
+  //     }
+  //     rangeInFileWithContents.contents += `\n\n/*\n${extra_context}*/\n`;
+  // }
   if (rangeInFileWithContents) {
     webviewProtocol?.request("highlightedCode", {
       rangeInFileWithContents,

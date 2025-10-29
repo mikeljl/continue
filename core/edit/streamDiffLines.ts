@@ -18,14 +18,16 @@ import {
   stopAtLines,
 } from "../autocomplete/filtering/streamTransforms/lineStream";
 import { streamDiff } from "../diff/streamDiff";
-import { streamLines } from "../diff/util";
+import { filterCodeContent, streamLines } from "../diff/util";
 import { getSystemMessageWithRules } from "../llm/rules/getSystemMessageWithRules";
 import { gptEditPrompt } from "../llm/templates/edit";
 import { defaultApplyPrompt } from "../llm/templates/edit/gpt";
 import { findLast } from "../util/findLast";
 import { Telemetry } from "../util/posthog";
 import { recursiveStream } from "./recursiveStream";
-
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 function constructEditPrompt(
   prefix: string,
   highlighted: string,
@@ -54,6 +56,8 @@ function constructApplyPrompt(
     original_code: originalCode,
     new_code: newCode,
   });
+  console.log("in constructApplyPrompt: Apply prompt template:", template);
+  console.log("in constructApplyPrompt: Rendered apply prompt:", rendered);
 
   return rendered;
 }
@@ -74,7 +78,7 @@ function modelIsInept(model: string): boolean {
   return !(model.includes("gpt") || model.includes("claude"));
 }
 
-export async function* streamDiffLines(
+export async function* streamDiffLines( // called by the edit mode
   options: StreamDiffLinesPayload,
   llm: ILLM,
   abortController: AbortController,
@@ -82,6 +86,8 @@ export async function* streamDiffLines(
   rulesToInclude: RuleWithSource[] | undefined,
 ): AsyncGenerator<DiffLine> {
   const { type, prefix, highlighted, suffix, input, language } = options;
+  console.log("in streamDiffLines, options:", options);
+  console.log("in streamDiffLines, overridePrompt:", overridePrompt);
 
   void Telemetry.capture(
     "inlineEdit",
@@ -112,6 +118,8 @@ export async function* streamDiffLines(
       ? constructApplyPrompt(oldLines.join("\n"), options.newCode, llm)
       : constructEditPrompt(prefix, highlighted, suffix, llm, input, language));
 
+  console.log("in streamDiffLines, apply/edit prompt", prompt);
+
   // Rules can be included with edit prompt
   // If any rules are present this will result in using chat instead of legacy completion
   const systemMessage =
@@ -132,6 +140,8 @@ export async function* streamDiffLines(
           contextItems: [],
         }).systemMessage
       : undefined;
+
+  console.log("in streamDiffLines, system message", systemMessage);
 
   if (systemMessage) {
     if (typeof prompt === "string") {
@@ -165,6 +175,12 @@ export async function* streamDiffLines(
     content: highlighted,
   };
 
+  console.log("in streamDiffLines, final prompt", prompt);
+  if (typeof prompt !== "string") {
+    console.log("in streamDiffLines, final prompt[0]:", prompt[0].content);
+    console.log("in streamDiffLines, final prompt[1]:", prompt[1].content);
+  }
+
   const completion = recursiveStream(
     llm,
     abortController,
@@ -172,18 +188,40 @@ export async function* streamDiffLines(
     prompt,
     prediction,
   );
+  let lines = streamLines(completion, true);
+  // console.log("start sleeping");
+  // await sleep(2000);
+  // console.log("done sleeping");
 
-  let lines = streamLines(completion);
-
-  lines = filterEnglishLinesAtStart(lines);
-  lines = filterCodeBlockLines(lines);
-  lines = stopAtLines(lines, () => {});
-  lines = skipLines(lines);
-  lines = removeTrailingWhitespace(lines);
-  if (inept) {
-    // lines = fixCodeLlamaFirstLineIndentation(lines);
-    lines = filterEnglishLinesAtEnd(lines);
+  if (type === "apply") {
+    lines = filterCodeContent(lines, true);
+  } else {
+    lines = filterEnglishLinesAtStart(lines);
+    lines = filterCodeBlockLines(lines);
+    lines = stopAtLines(lines, () => {});
+    lines = skipLines(lines);
+    lines = removeTrailingWhitespace(lines);
+    if (inept) {
+      // lines = fixCodeLlamaFirstLineIndentation(lines);
+      lines = filterEnglishLinesAtEnd(lines);
+    }
   }
+
+  // lines = filterEnglishLinesAtStart(lines);
+  // lines = filterCodeBlockLines(lines);
+  // lines = stopAtLines(lines, () => {});
+  // lines = skipLines(lines);
+  // lines = removeTrailingWhitespace(lines);
+  // if (inept) {
+  //   // lines = fixCodeLlamaFirstLineIndentation(lines);
+  //   lines = filterEnglishLinesAtEnd(lines);
+  // }
+
+  // console.log("-------------Filtered Lines-----------------")
+  // for await (const line of lines) {
+  //   console.log(line);
+  // }
+  // console.log("-------------Filtered Lines-----------------")
 
   let diffLines = streamDiff(oldLines, lines);
   diffLines = filterLeadingAndTrailingNewLineInsertion(diffLines);

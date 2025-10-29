@@ -352,6 +352,7 @@ class VsCodeIde implements IDE {
   }
 
   async saveFile(fileUri: string): Promise<void> {
+    console.log("Saving file:", fileUri);
     await this.ideUtils.saveFile(vscode.Uri.parse(fileUri));
   }
 

@@ -128,7 +128,9 @@ export async function* streamLines(
     }
   } finally {
     if (log) {
-      console.log("Streamed lines: ", allLines.join("\n"));
+      console.log("---------------Streamed Lines-----------------");
+      console.log(allLines.join("\n"));
+      console.log("---------------------------------------------");
     }
   }
 }
@@ -137,5 +139,55 @@ export async function* generateLines<T>(lines: T[]): AsyncGenerator<T> {
   for (const line of lines) {
     yield line;
     // await new Promise((resolve, reject) => setTimeout(() => resolve(null), 50));
+  }
+}
+
+export async function* filterCodeContent(
+  lines: LineStream,
+  log = false,
+): LineStream {
+  let insideCodeTag = false;
+  let allLine = [];
+  try {
+    for await (const line of lines) {
+      if (line.includes("<updated-code>") && line.includes("</updated-code>")) {
+        const [, extractedContent] = line.split("<updated-code>");
+        const [content] = extractedContent.split("</updated-code>");
+        yield content;
+        allLine.push(content);
+        continue;
+      }
+
+      if (line.includes("<updated-code>")) {
+        insideCodeTag = true;
+        const partialContent = line.split("<updated-code>")[1];
+        if (partialContent) {
+          yield partialContent;
+          allLine.push(partialContent);
+        }
+        continue;
+      }
+
+      if (line.includes("</updated-code>")) {
+        insideCodeTag = false;
+        const partialContent = line.split("</updated-code>")[0];
+        if (partialContent) {
+          yield partialContent;
+          allLine.push(partialContent);
+        }
+        continue;
+      }
+
+      if (insideCodeTag) {
+        yield line;
+        allLine.push(line);
+      }
+    }
+  } finally {
+    if (log) {
+      console.log("---------------Filtered Code Content-----------------");
+      console.log(allLine.join("\n"));
+      console.log("-----------------------------------------------------");
+    }
   }
 }

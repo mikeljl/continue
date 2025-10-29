@@ -26,13 +26,18 @@ export async function* llmStreamChat(
   }
 
   const {
-    legacySlashCommandData,
+    legacySlashCommandData, // this is false
     completionOptions,
     messages,
     messageOptions,
   } = msg.data;
-
+  for (const m of messages) {
+    console.log("role:", m.role, "content:", m.content);
+  }
+  console.log("completionOptions:", completionOptions);
+  console.log("messageOptions:", messageOptions);
   const model = config.selectedModelByRole.chat;
+  console.log("model:", model);
 
   if (!model) {
     throw new Error("No chat model selected");
@@ -157,6 +162,7 @@ export async function* llmStreamChat(
       if (!next.done) {
         throw new Error("Will never happen");
       }
+      console.log("llmStreamChat completed", next.value.completion);
 
       return next.value;
     }

@@ -1,7 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 
 import { ContextItemWithId, RangeInFileWithContents } from "../";
-import { findUriInDirs, getUriPathBasename } from "../util/uri";
+import {
+  findUriInDirs,
+  getAbsolutePathFromUri,
+  getUriPathBasename,
+} from "../util/uri";
 
 export function rifWithContentsToContextItem(
   rif: RangeInFileWithContents,
@@ -12,9 +16,11 @@ export function rifWithContentsToContextItem(
     window.workspacePaths ?? [],
   );
   const rangeStr = `(${rif.range.start.line + 1}-${rif.range.end.line + 1})`;
+  const absolutePath = getAbsolutePathFromUri(rif.filepath);
+  const metadataComment = `/-relative file path: ${relativePathOrBasename} absolute file path: ${absolutePath} lines: ${rangeStr}-/`;
 
   return {
-    content: rif.contents,
+    content: `${metadataComment}\n${rif.contents}`,
     name: `${basename} ${rangeStr}`,
     description: `${relativePathOrBasename} ${rangeStr}`,
     id: {

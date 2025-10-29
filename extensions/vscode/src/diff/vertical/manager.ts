@@ -433,6 +433,14 @@ export class VerticalDiffManager {
       llm.model,
     );
 
+    console.log("in streamEdit, prefix", prefix);
+    console.log("in streamEdit, suffix", suffix);
+    console.log("in streamEdit, selected code", rangeContent);
+    console.log("in streamEdit, llm used", llm);
+    console.log("in streamEdit, context length", llm.contextLength);
+    console.log("in streamEdit, tool call id:", toolCallId);
+    console.log("in streamEdit, llm promptTemplates:", llm.promptTemplates);
+
     let overridePrompt: ChatMessage[] | undefined;
     if (llm.promptTemplates?.apply) {
       const filepath = getLastNPathParts(fileUri, 1);
@@ -441,11 +449,13 @@ export class VerticalDiffManager {
         new_code: newCode ?? "",
         filepath,
       });
+      console.log("in streamEdit, rendered apply prompt:", rendered);
       overridePrompt =
         typeof rendered === "string"
           ? [{ role: "user", content: rendered }]
           : rendered;
     }
+    console.log("in streamEdit, overridePrompt:", overridePrompt);
 
     if (editor.selection) {
       // Unselect the range

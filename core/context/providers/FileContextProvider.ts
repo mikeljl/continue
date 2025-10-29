@@ -6,9 +6,9 @@ import {
   ContextSubmenuItem,
   LoadSubmenuItemsArgs,
 } from "../../";
-import { isSecurityConcern } from "../../indexing/ignore";
 import { walkDirs } from "../../indexing/walkDir";
 import {
+  getAbsolutePathFromUri,
   getShortestUniqueRelativeUriPaths,
   getUriDescription,
   getUriPathBasename,
@@ -36,12 +36,17 @@ class FileContextProvider extends BaseContextProvider {
       fileUri,
       await extras.ide.getWorkspaceDirs(),
     );
+    const absolutePath = getAbsolutePathFromUri(fileUri);
+    const metadataHeader = [
+      `relative file path: ${relativePathOrBasename}`,
+      `absolute file path: ${absolutePath}`,
+    ].join("\n");
 
     return [
       {
         name: baseName,
         description: last2Parts,
-        content: `\`\`\`${relativePathOrBasename}\n${content}\n\`\`\``,
+        content: `\`\`\`${metadataHeader}\n${content}\n\`\`\``,
         uri: {
           type: "file",
           value: fileUri,

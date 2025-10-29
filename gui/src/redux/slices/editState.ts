@@ -56,6 +56,7 @@ export const editStateSlice = createSlice({
       state.codeToEdit = Array.isArray(payload.codeToEdit)
         ? payload.codeToEdit
         : [payload.codeToEdit];
+      console.log("Set code to edit:", state.codeToEdit);
     },
     clearCodeToEdit: (state) => {
       state.codeToEdit = [];

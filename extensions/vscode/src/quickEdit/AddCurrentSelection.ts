@@ -55,10 +55,51 @@ export async function addCurrentSelectionToEdit({
   const range =
     args?.range ?? new vscode.Range(startFromCharZero, endAtCharLast);
 
+  const leanExt = vscode.extensions.getExtension("leanprover.lean4");
+  if (!leanExt) {
+    vscode.window.showErrorMessage("Lean 4 extension not installed.");
+    return;
+  }
+  // if (!leanExt.isActive) await leanExt.activate();
+
+  // console.log("Lean extension:", leanExt);
+  // const leanExports: any = leanExt.exports;
+  // console.log("Lean exports:", leanExports);
+  // const features = await leanExports.lean4EnabledFeatures;
+  // console.log("Language features:", features);
+  // const clientProvider = features.clientProvider;
+  // console.log("Client provider:", clientProvider);
+  // const clientsMap: Map<string, any> = clientProvider.clients;
+  // console.log("Clients map:", clientsMap);
+  // const uri = editor.document.uri.toString();
+  // // let clientWrapper = [...clientsMap.values()][0]; // default to first client
+  // let clientWrapper = null;
+  // for (const client_name of clientsMap.keys()) {
+  //   if (uri.startsWith(client_name)) {
+  //     clientWrapper = clientsMap.get(client_name);
+  //     break;
+  //   }
+  // }
+  // // const clientWrapper =
+  // //   clientsMap.get(uri) ?? // file:///Users/mike/Desktop/pde_choksi/pde/PDE/Section_7_2_1.lean
+  // //   [...clientsMap.values()][0]; // file:///Users/mike/Desktop/pde_choksi/pde
+  // console.log("Using client:", clientWrapper);
+  // const languageClient = clientWrapper.client;
+  // const params = {
+  //   textDocument: { uri: document.uri.toString() },
+  //   position: { line: range.end.line, character: range.end.character }, //, character: range.end.character
+  // };
+  // const response = await languageClient._connection.sendRequest("$/lean/plainGoal", params);
+  // console.log("LSP response:", response);
+  // const goals = response.goals;
+  // console.log("Goals:", goals);
+
   editDecorationManager.clear();
   editDecorationManager.addDecorations(editor, [range]);
 
   const rangeInFileWithContents = getRangeInFileWithContents(true, range);
+
+  console.log("Adding current selection to edit:", rangeInFileWithContents);
 
   if (rangeInFileWithContents) {
     webviewProtocol?.request("setCodeToEdit", rangeInFileWithContents);

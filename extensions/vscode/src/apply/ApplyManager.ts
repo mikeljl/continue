@@ -30,11 +30,15 @@ export class ApplyManager {
     filepath,
     text,
     toolCallId,
-    isSearchAndReplace,
+    isSearchAndReplace, // undefined for apply in chat, and edit file tool call
   }: ApplyToFilePayload) {
     if (filepath) {
+      console.log("Ensuring file is open for filepath:", filepath);
       await this.ensureFileOpen(filepath);
     }
+
+    console.log("in applyToFile, text:", text);
+    console.log("in applyToFile, isSearchAndReplace:", isSearchAndReplace);
 
     const { activeTextEditor } = vscode.window;
     if (!activeTextEditor) {
@@ -44,6 +48,7 @@ export class ApplyManager {
 
     // Capture the original file content before applying changes
     const originalFileContent = activeTextEditor.document.getText();
+    console.log("in applyToFile, originalFileContent:", originalFileContent);
 
     await this.webviewProtocol.request("updateApplyState", {
       streamId,
@@ -139,7 +144,10 @@ export class ApplyManager {
       return;
     }
 
+    console.log("in handleExistingDocument, apply using model:", llm);
+
     const fileUri = editor.document.uri.toString();
+    console.log("in handleExistingDocument, fileUri:", fileUri);
     const abortManager = ApplyAbortManager.getInstance();
     const abortController = abortManager.get(fileUri);
 
@@ -150,6 +158,8 @@ export class ApplyManager {
       llm,
       abortController,
     );
+
+    console.log("in handleExistingDocument, isInstantApply:", isInstantApply);
 
     if (isInstantApply) {
       await this.verticalDiffManager.streamDiffLines(
@@ -223,6 +233,7 @@ export class ApplyManager {
       void vscode.window.showErrorMessage("Config not loaded");
       return;
     }
+    console.log("tool call id:", toolCallId);
 
     const prompt = this.getApplyPrompt(text);
     const fullEditorRange = new vscode.Range(
@@ -231,9 +242,15 @@ export class ApplyManager {
       editor.document.lineCount - 1,
       editor.document.lineAt(editor.document.lineCount - 1).text.length,
     );
-    const rangeToApplyTo = editor.selection.isEmpty
-      ? fullEditorRange
-      : editor.selection;
+    // const rangeToApplyTo = editor.selection.isEmpty
+    //   ? fullEditorRange
+    //   : editor.selection;
+
+    const rangeToApplyTo = fullEditorRange;
+
+    console.log("rangeToApplyTo:", rangeToApplyTo);
+    console.log("fullEditorRange:", fullEditorRange);
+    console.log("editor.selection:", editor.selection);
 
     if (streaming) {
       await verticalDiffManager.streamEdit({
